@@ -15,15 +15,17 @@
 
 
 ** Agents to Implement:
-   -  N-step DQN [7]
-   -  Prioritized experience replay [8]
-   -  Policy Gradient⁹
-   -  PPO [10]
-   -  DPG [11,12]
-   -  D4PG [13]
-   -  Actor-Critic Methods
-
-
+   - N-step DQN [7]
+   - Prioritized experience replay [8]
+   - Policy Gradient⁹
+   - PPO [10]
+   - DPG [11,12]
+   - D4PG [13]
+   - Actor-Critic Methods
+  
+\\
+\\
+\\
 
 
  References

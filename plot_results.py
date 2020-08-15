@@ -8,7 +8,7 @@ from run import get_latest_id
 
 
 @click.command()
-@click.argument('game', default = 'CartPole-v0')
+@click.argument('game')
 @click.option('--basepath', default = None, help='parent directory to search for logs - assumes saved as per run.py')
 @click.option('--exp_id', default = None, help='If not given, assumes most recent experiment')
 @click.option('--save/--nsave', default = False, help='Save to png')
