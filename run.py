@@ -1,15 +1,20 @@
+# STL
 import os
 import sys
-import gc
-import psutil
-import tracemalloc
 import logging
-import memory_profiler
-from pympler import muppy, summary
 from pathlib import Path
 from datetime import datetime
 import json
 import random
+
+# Optional Tools for debugging.
+# import psutil
+# import gc
+# import tracemalloc
+# import memory_profiler
+# from pympler import muppy, summary
+
+# User Libraries
 from tqdm import tqdm
 import cv2
 import click
@@ -18,13 +23,16 @@ import pandas as pd
 import torch
 import gym
 import matplotlib.pyplot as plt
-from environments import make_env
-from Agent import SARSD
-from NN import ConvModel, MLP, IQN_MLP, IQNConvModel, FQF_MLP, FQFConvModel
-from dqn_agent import DQN
-from iqn_agent import IQN
-from fqf_agent import FQF
-from utils import *
+
+# Current Module Imports
+from rl_suite.environments import make_env
+from rl_suite.agent import SARSD
+from rl_suite.NN import ConvModel, MLP, IQN_MLP, IQNConvModel, FQF_MLP, FQFConvModel
+from rl_suite.dqn_agent import DQN
+from rl_suite.iqn_agent import IQN
+from rl_suite.fqf_agent import FQF
+from rl_suite.utils import *
+
 # import wandb
 
 logging.basicConfig(level=logging.INFO)
@@ -68,7 +76,7 @@ def setup_experiment(basepath, game, params, continue_exp=True):
     for pth in (modelpath, imagepath, logpath, parampath):
         if not pth.is_dir():
             pth.mkdir(parents=True, exist_ok=True)
-    logpath /= 'testlog.csv'
+    logpath /= 'trainlog.csv'
     parampath /= 'params.json'
 
     if not parampath.exists():
@@ -183,8 +191,6 @@ def train_loop(agent, env, basepath, exp_id, send_to_wandb=False, replay_period=
     eps = eps * (1-eps_decay) ** i
     state = env.reset()
     # episode_rewards = []
-    # gc.set_debug(gc.DEBUG_LEAK)
-    process = psutil.Process(os.getpid())
     try:
         tq=tqdm(total=max_steps)
         tq.update(i)
