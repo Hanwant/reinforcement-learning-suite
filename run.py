@@ -33,6 +33,7 @@ from rl_suite.iqn_agent import IQN
 from rl_suite.fqf_agent import FQF
 from rl_suite.utils import *
 
+# will be imported inside function if send_to_wandb is set to True - so non-users don't have to install
 # import wandb
 
 logging.basicConfig(level=logging.INFO)
@@ -88,8 +89,9 @@ def setup_experiment(basepath, game, params, continue_exp=True):
 
     return exp_id, logpath, parampath, modelpath, imagepath, params
 
-def init_wandb(game, exp_id, params):
-    wandb.init(project=f"{game}_exp_{exp_id}", name=game)
+def init_wandb(game, exp_id, params, continue_exp=False):
+    import wandb
+    wandb.init(project=f"{game}_exp_{exp_id}", name=game, resume=continue_exp)
     wandb.config.buffer_size = params['buffer_size']
     wandb.config.min_buffer_size = params['min_buffer_size']
     wandb.config.batch_size = params['batch_size' ]
@@ -182,7 +184,7 @@ def train_loop(agent, env, basepath, exp_id, send_to_wandb=False, replay_period=
     rb = agent.replay_buffer
     save_period = save_period
     steps_since_t_update = 0
-    training_steps = 0
+    training_steps = agent.training_steps
     rolling_reward = 0.
     last_episode_reward = 0.
     test_reward = 0.

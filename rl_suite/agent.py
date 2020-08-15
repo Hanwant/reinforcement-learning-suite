@@ -55,7 +55,7 @@ class ReplayBuffer:
 class ReplayBuffer_HDF5(ReplayBuffer):
     """
     For use when not enough RAM is available to hold the whole buffer in memory
-    I.e 100,000 = 2 * (84 * 84 * 4 * 8) * 10000/1000000000 bytes = 11.3 GB
+    I.e 100,000 = 2 * (84 * 84 * 4) * 100000/1000000000 bytes = 5.6 GB of RAM
     """
     def __init__(self, example_item, buffer_size=100000, savepath=None, resume=False, **params):
         import h5py
