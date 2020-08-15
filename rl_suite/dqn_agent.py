@@ -4,8 +4,8 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
-from NN import ConvModel, MLP, IQN_MLP, IQNConvModel
-from Agent import Agent
+from .NN import ConvModel, MLP, IQN_MLP, IQNConvModel
+from .agent import Agent
 
 class DQN(Agent):
     def __init__(self, obs_shape, num_actions, modelpath, model_class=ConvModel, buffer_size=100000, discount = 0.99, lr=1e-4,

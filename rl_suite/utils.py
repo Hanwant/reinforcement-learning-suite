@@ -1,5 +1,6 @@
 import os
-import psutil
+import sys
+# import psutil
 import torch
 import numpy as np
 import cv2
@@ -7,6 +8,7 @@ import cv2
 
 def mem():
     """ Returns currently used memory in mb """
+    import psutil
     process = psutil.Process(os.getpid())
     return process.memory_info().rss / (1024 * 1024)
 

@@ -3,10 +3,10 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
-from NN import ConvModel, MLP, FQF_MLP, FQFConvModel
-from Agent import Agent
-from dqn_agent import DQN
-from utils import huber_quantile_loss
+from .NN import ConvModel, MLP, FQF_MLP, FQFConvModel
+from .agent import Agent
+from .dqn_agent import DQN
+from .utils import huber_quantile_loss
 
 
 
