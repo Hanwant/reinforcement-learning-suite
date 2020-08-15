@@ -10,17 +10,17 @@
      - Implicit Quantile Networks⁴ (IQN)
      - Fully Parameterized Quantile Function⁵ (FQF)
 
-   These agents typically share a common base (i.e DQN) and so are composable with each other (I.e As in Rainbow^6)
+   These agents typically share a common base (i.e DQN) and so are composable with each other (I.e As in Rainbow⁶)
 
 
 
 ** Agents to Implement:
-   -  N-step DQN^7
-   -  Prioritized experience replay^8
-   -  Policy Gradient^9
-   -  PPO^10
-   -  DPG^11,12
-   -  D4PG^13
+   -  N-step DQN [7]
+   -  Prioritized experience replay [8]
+   -  Policy Gradient⁹
+   -  PPO [10]
+   -  DPG [11,12]
+   -  D4PG [13]
    -  Actor-Critic Methods
 
 
