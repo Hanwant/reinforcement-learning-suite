@@ -5,6 +5,5 @@ opencv_python==4.3.0.36
 numpy==1.18.1
 pandas==1.0.3
 gym==0.17.2
-Pympler==0.8
 click==7.1.2
 h5py==2.10.0
