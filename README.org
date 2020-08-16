@@ -15,7 +15,7 @@
 
   #+CAPTION: Results for an experiment run of an IQN agent on the Boxing-v0 Atari game
   #+NAME:   img
-  [[./logs/Boxing-v0/16/plot.png]]
+  [[file:[[./logs/Boxing-v0/16/plot.png]]]]
 
 ** Agents to Implement:
    - N-step DQN [7, 14]
