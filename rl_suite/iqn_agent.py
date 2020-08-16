@@ -50,9 +50,12 @@ class IQN(Agent):
         self.opt.zero_grad()
         with torch.no_grad():
             if self.double_dqn:
-                b_actions = self.model_b(next_states).max(-1)[1]
-                idxs = b_actions + (self.num_actions * torch.arange(b_actions.shape[0]).to(self.device))
-                quantiles_next = self.model_t(next_states, tau=tau2).take(idxs)
+                greedy_quantiles = self.model_b(next_states, tau=tau_b) #(bs, quantiles, num_actions)
+                next_actions = torch.argmax(greedy_quantiles.mean(dim=1), dim=-1, keepdim=True)
+                assert next_actions.shape == (self.batch_size, 1)
+                one_hot_actions = F.one_hot(next_actions, self.num_actions).to(self.device)
+                quantiles_next = self.model_t(next_states, tau=tau2)
+                qvals_next = (quantiles_next * one_hot_actions).sum(-1)
             else:
                 greedy_quantiles = self.model_t(next_states, tau=tau_b) #(bs, quantiles, num_actions)
                 next_actions = torch.argmax(greedy_quantiles.mean(dim=1), dim=-1, keepdim=True)
@@ -60,11 +63,10 @@ class IQN(Agent):
                 one_hot_actions = F.one_hot(next_actions, self.num_actions).to(self.device)
                 quantiles_next = self.model_t(next_states, tau=tau2)
                 qvals_next = (quantiles_next * one_hot_actions).sum(-1)
-                G_t = rewards[:, None] + self.discount * mask[:, None] * qvals_next
+            G_t = rewards[:, None] + self.discount * mask[:, None] * qvals_next
 
         one_hot_actions = F.one_hot(actions[:, None], self.num_actions).to(self.device)
         quantiles_current = self.model_b(states, tau=tau1)
-        # qvals = quantiles_current.mean(-1)
         Q_t = (quantiles_current* one_hot_actions).sum(-1)
         td_errors = G_t.unsqueeze(1) - Q_t.unsqueeze(-1) # (bs, Ntau1, Ntau2)
         loss = self.quantile_huber_loss(td_errors, tau1)

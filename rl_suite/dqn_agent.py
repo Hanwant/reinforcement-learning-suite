@@ -42,10 +42,10 @@ class DQN(Agent):
                 qvals_next = self.model_t(next_states).take(idxs)
             else:
                 qvals_next = self.model_t(next_states).max(-1)[0]
-            one_hot_actions = F.one_hot(actions, self.num_actions).to(self.device)
             G_t = rewards + (mask * self.discount * qvals_next)
             # G_t = rewards[:, 0] + (mask[:, 0] * self.discount * qvals_next)
 
+        one_hot_actions = F.one_hot(actions, self.num_actions).to(self.device)
         qvals = self.model_b(states)
         if self.loss == "mse":
             Q_t = torch.sum(qvals * one_hot_actions, -1)
