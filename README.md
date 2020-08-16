@@ -16,8 +16,9 @@
   ![Results for an experiment run of an IQN agent on the Boxing-v0 Atari game](/logs/Boxing-v0/16/plot.png)
 
   Video of an IQN agent playing Breakout - after ~9,000,000 interactions with the environment
+  ![Video of IQN playing Breakout](/images/Breakout-v0/24/step_9900396_reward_72.0.mp4)
   <video width="320" height="240" controls>
-    <source src="images/Breakout-v0/24/step_9900396_reward_72.0.mp4" type="video/mp4">
+    <source src="/images/Breakout-v0/24/step_9900396_reward_72.0.mp4" type="video/mp4">
   </video>
 
 ## Agents to Implement:
