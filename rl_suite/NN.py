@@ -41,7 +41,7 @@ class DuelingHead(nn.Module):
             x1=x2=x
         vals = self.out_value(x1)
         adv = self.out_adv(x2)
-        qvals = vals + adv - adv.mean(-1).unsqueeze(-1)
+        qvals = vals + adv - adv.mean(-1, keepdim=True)
         return qvals
 
 class TauEmbedLayer(nn.Module):
@@ -88,7 +88,7 @@ class MLP(nn.Module):
         self.layers = nn.Sequential(*layers)
 
     def forward(self, x):
-        x = self.in_layer(x)
+        x = self.in_layer(x.float())
         x = self.layers(x)
         return x
 
@@ -126,27 +126,35 @@ class ConvModel(nn.Module):
 
 
 class IQN_MLP(nn.Module):
-    def __init__(self, obs_shape, num_actions, d_model=256, dueling=False, nlayers=2, **params):
+    def __init__(self, obs_shape, num_actions, d_model=256, d_embed=64, Ntau=32, dueling=False, nlayers=2, **params):
         super().__init__()
         self.in_shape = obs_shape[0]
         self.out_shape = num_actions
         self.d_model = d_model
+        self.Ntau = Ntau
         self.in_layer = nn.Sequential(nn.Linear(self.in_shape, d_model), nn.ReLU())
         layers = []
         for l in range(nlayers-1):
             layers.append(nn.Linear(d_model, d_model))
             layers.append(nn.ReLU())
+        self.tau_embed = TauEmbedLayer(d_embed, d_model)
         self.dueling = dueling
         if dueling:
-            layers.append(DuelingHead(d_model, num_actions))
+            self.out_layer = DuelingHead(d_model, num_actions)
         else:
-            layers.append(nn.Linear(d_model, num_actions))
+            self.out_layer = nn.Linear(d_model, num_actions)
         self.layers = nn.Sequential(*layers)
 
-    def forward(self, x):
-        x = self.in_layer(x)
-        x = self.layers(x)
-        return x
+    def forward(self, x, tau=None):
+        if tau is None:
+            tau = torch.rand(x.shape[0], self.Ntau, dtype=torch.float, device=x.device)
+        assert tau.shape[0] == x.shape[0]
+        bs = x.shape[0]
+        state_embeddings = self.layers(self.in_layer(x.float()))
+        tau_embeddings = self.tau_embed(tau)
+        embeddings = (state_embeddings.unsqueeze(1) * tau_embeddings) #(bs, N, d_model)
+        quantiles = self.out_layer(embeddings) # (bs, N, num_actions)
+        return quantiles
 
 class IQNConvModel(nn.Module):
     def __init__(self, obs_shape, num_actions, d_model=256, d_embed=64, dueling=False, Ntau=32, **params):
