@@ -38,8 +38,11 @@ class DQN(Agent):
             if self.double_dqn:
                 b_actions = self.model_b(next_states).max(-1)[1]
                 # Getting contiguous array indexes
-                idxs = b_actions + (self.num_actions * torch.arange(b_actions.shape[0]).to(self.device))
-                qvals_next = self.model_t(next_states).take(idxs)
+                one_hot_actions = F.one_hot(actions, self.num_actions).to(self.device)
+                # idxs = b_actions + (self.num_actions * torch.arange(b_actions.shape[0]).to(self.device))
+                # qvals_next = self.model_t(next_states).take(idxs)
+                qvals_next = self.model_t(next_states)
+                qvals_next = torch.sum(qvals_next * one_hot_actions, -1)
             else:
                 qvals_next = self.model_t(next_states).max(-1)[0]
             G_t = rewards + (mask * self.discount * qvals_next)
