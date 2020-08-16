@@ -1,23 +1,21 @@
-* Reinforcement Learning Suite
+# Reinforcement Learning Suite
 
   This repo contains pytorch implementations of various RL algorithms, with a focus on Neural Networks as function approximators.
   Implementations are tested on various classic Atari games, as well as cartpole for quick prototyping. The main interface for running training and/or testing of agents is via run.py. Execute python run.py --h to see how to pass arguments to the script. 
 
-** Agents currently implemented:
-     - DQN¹
-     - Double DQN²
-     - Dueling DQN³
-     - Implicit Quantile Networks⁴ (IQN)
-     - *Fully Parameterized Quantile Function⁵ (FQF)
+## Agents currently implemented:
+     *  DQN¹
+     *  Double DQN²
+     *  Dueling DQN³
+     *  Implicit Quantile Networks⁴ (IQN)
+     * *Fully Parameterized Quantile Function⁵ (FQF)
 
    These agents typically share a common base (i.e DQN) and so are composable with each other (I.e As in Rainbow⁶)
      *Needs to be fixed
 
-  #+CAPTION: Results for an experiment run of an IQN agent on the Boxing-v0 Atari game
-  #+NAME:   img
-  [[file:[[./logs/Boxing-v0/16/plot.png]]]]
+  ![Results for an experiment run of an IQN agent on the Boxing-v0 Atari game](/logs/Boxing-v0/16/plot.png)
 
-** Agents to Implement:
+## Agents to Implement:
    - N-step DQN [7, 14]
    - Prioritized experience replay [8]
    - Policy Gradient [9]
@@ -28,7 +26,7 @@
   
 
 
- References
+### References
  1. Mnih, V., Kavukcuoglu, K., Silver, D., Rusu, A. A., Veness, J., Bellemare, M. G., ... & Petersen, S. (2015). Human-level control through deep reinforcement learning. nature, 518(7540), 529-533.
  2. Van Hasselt, H., Guez, A., & Silver, D. (2015). Deep reinforcement learning with double q-learning. arXiv preprint arXiv:1509.06461.
  3. Wang, Z., Schaul, T., Hessel, M., Hasselt, H., Lanctot, M., & Freitas, N. (2016, June). Dueling network architectures for deep reinforcement learning. In International conference on machine learning (pp. 1995-2003).
