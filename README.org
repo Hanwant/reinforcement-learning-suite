@@ -11,8 +11,11 @@
      - *Fully Parameterized Quantile Function⁵ (FQF)
 
    These agents typically share a common base (i.e DQN) and so are composable with each other (I.e As in Rainbow⁶)
-   * Needs to be fixed
+     *Needs to be fixed
 
+  #+CAPTION: Results for an experiment run of an IQN agent on the Boxing-v0 Atari game
+  #+NAME:   img
+  [[./logs/Boxing-v0/16/plot.png]]
 
 ** Agents to Implement:
    - N-step DQN [7, 14]
@@ -23,8 +26,6 @@
    - D4PG [13]
    - Actor-Critic Methods
   
-\\
-\\
 
 
  References
