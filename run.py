@@ -6,6 +6,7 @@ from pathlib import Path
 from datetime import datetime
 import json
 import random
+from collections import deque
 
 # Optional Tools for debugging.
 # import psutil
@@ -168,20 +169,22 @@ def show_action_values(action_values, idxs):
 
 
 
-def train_loop(agent, env, basepath, exp_id, send_to_wandb=False, replay_period=4, save_period=32000, max_steps=100000, expl="eps",
-               eps=1., eps_decay=1e-5, eps_min=0.1, frame_skip=4, boltzmann_temp = 0.8, max_test_steps=10000, **kwargs):
+def train_loop(agent, env, basepath, exp_id, send_to_wandb=False, replay_period=4, save_period=32000, max_steps=100000, expl="eps", nstep=1, eps=1., eps_decay=1e-5, eps_min=0.1, frame_skip=4, boltzmann_temp = 0.8, max_test_steps=10000, **kwargs):
     # tracemalloc.start()
     # snap1 = tracemalloc.take_snapshot( )
     assert expl in ('eps', 'boltzmann')
 
-    i = agent.total_episodes
     logpath = basepath/f'logs/{env.game}/{exp_id}/testlog.csv'
     imagepath = basepath/f'images/{env.game}/{exp_id}/'
     init_logs(agent, env, logpath, send_to_wandb=send_to_wandb)
+
+    i = agent.total_episodes
     max_steps += i
     buffer_size = agent.buffer_size
     replay_period = agent.replay_period
     rb = agent.replay_buffer
+    nstep_buffer = []
+    steps_since_buffer_update = 0
     save_period = save_period
     steps_since_t_update = 0
     training_steps = agent.training_steps
@@ -228,7 +231,16 @@ def train_loop(agent, env, basepath, exp_id, send_to_wandb=False, replay_period=
             # Take action, get SARSD
             new_state, reward, done, info = env.step(action)
             rolling_reward += reward
-            agent.replay_buffer.insert(SARSD(state, action, reward, new_state, done))
+
+            # Replay Buffer update generalized for multi-step setups
+            nstep_buffer.append(SARSD(state, action, reward, new_state, done))
+            if len(nstep_buffer) >= nsteps:
+                _reward = sum([dat.reward for dat in nstep_buffer])
+                _next_state = nstep_buffer[-1].next_state
+                sarsd = nstep_buffer.pop(0)
+                agent.replay_buffer.insert(SARSD(sarsd.state, sarsd.action, _reward, _next_state, sarsd.done))
+
+            steps_since_buffer_update += 1
             state = new_state
 
             # If episode is done, reset environment and rolling reward
@@ -300,14 +312,14 @@ def main(game, train, continue_exp, max_steps, send_to_wandb, max_test_steps, us
 
     # DEFAULT PARAMS IF param.json file is not found in parampath for experiment
     params = dict(double_dqn = False,
-                  dueling = False,
+                  dueling = True,
                   prioritized_replay = True,
                   multi_step = True,
                   nstep = 3,
                   noisy_nets = True,
 
-                  IQN=False,
-                  FQF=True,
+                  IQN=True,
+                  FQF=False,
                   d_embed = 64,
                   Ntau=32,
                   Ntau1 = 32,
@@ -325,7 +337,7 @@ def main(game, train, continue_exp, max_steps, send_to_wandb, max_test_steps, us
                   loss='huber',
                   k_huber = 1.,
 
-                  save_period=100000,
+                  save_period=32000,
                   expl='eps',
                   eps=1.,
                   eps_decay=1e-6,
