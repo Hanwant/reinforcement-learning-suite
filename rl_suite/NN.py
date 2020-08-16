@@ -41,7 +41,7 @@ class DuelingHead(nn.Module):
             x1=x2=x
         vals = self.out_value(x1)
         adv = self.out_adv(x2)
-        qvals = vals + adv - adv.mean(-1)[:, None]
+        qvals = vals + adv - adv.mean(-1).unsqueeze(-1)
         return qvals
 
 class TauEmbedLayer(nn.Module):
