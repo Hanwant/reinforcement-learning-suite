@@ -17,10 +17,7 @@
 
   Video of an IQN agent playing Breakout - after ~9,000,000 interactions with the environment
   ![Video of IQN playing Breakout](https://github.com/Hanwant/reinforcement-learning-suite/blob/master/images/Breakout-v0/24/step_9900396_reward_72.0.mp4)
-  <video width="320" height="240" controls>
-    <source src="https://github.com/Hanwant/reinforcement-learning-suite/blob/master/images/Breakout-v0/24/step_9900396_reward_72.0.mp4" type="video/mp4">
-  </video>
-
+  <video src="/images/Breakout-v0/24/step_9900396_reward_72.0.mp4" width="320" height="200" controls preload></video>
 ## Agents to Implement:
    - N-step DQN [7, 14]
    - Prioritized experience replay [8]
