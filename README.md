@@ -7,7 +7,7 @@
      * DQN [1]
      * Double DQN [2]
      * Dueling DQN [3]
-     * N-step DQN [7, 14]
+     * N-step DQN [7, 9]
      * Implicit Quantile Networks [4] (IQN)
      * Fully Parameterized Quantile Function** [5] (FQF)
 
@@ -17,9 +17,9 @@
   ![Results for an experiment run of an IQN agent on the Boxing-v0 Atari game](/examples/boxing_iqn_plot.png)
 
   <!-- Video of an IQN agent playing Breakout - after ~9,000,000 interactions with the environment -->
-  [![Video of IQN playing Boxing](/examples/boxing_Iqn_step-14825908-reward-920.gif)]
-  [![Video of IQN playing Breakout](/examples/breakout_iqn_step-9900396-reward-72.gif)]
-  <video src="/images/Breakout-v0/24/step_9900396_reward_72.0.mp4" width="320" height="200" controls preload></video>
+  ![Video of IQN playing Boxing](/examples/boxing_Iqn_step-14825908-reward-920.gif)
+  ![Video of IQN playing Breakout](/examples/breakout_iqn_step-9900396-reward-72.gif)
+
 ## Agents/Methods to Implement:
    * Prioritized experience replay [8]
   
@@ -34,9 +34,4 @@
  6. Hessel, M., Modayil, J., Van Hasselt, H., Schaul, T., Ostrovski, G., Dabney, W., ... & Silver, D. (2017). Rainbow: Combining improvements in deep reinforcement learning. arXiv preprint arXiv:1710.02298.
  7. Mnih, V., Badia, A. P., Mirza, M., Graves, A., Lillicrap, T., Harley, T., ... & Kavukcuoglu, K. (2016, June). Asynchronous methods for deep reinforcement learning. In International conference on machine learning (pp. 1928-1937).
  8. Schaul, T., Quan, J., Antonoglou, I., & Silver, D. (2015). Prioritized experience replay. arXiv preprint arXiv:1511.05952.
- 9. Duan, Y., Chen, X., Houthooft, R., Schulman, J., & Abbeel, P. (2016, June). Benchmarking deep reinforcement learning for continuous control. In International Conference on Machine Learning (pp. 1329-1338).
- 10. Schulman, J., Wolski, F., Dhariwal, P., Radford, A., & Klimov, O. (2017). Proximal policy optimization algorithms. arXiv preprint arXiv:1707.06347.
- 11. Silver, D., Lever, G., Heess, N., Degris, T., Wierstra, D., & Riedmiller, M. (2014, June). Deterministic policy gradient algorithms.
- 12. Lillicrap, T. P., Hunt, J. J., Pritzel, A., Heess, N., Erez, T., Tassa, Y., ... & Wierstra, D. (2015). Continuous control with deep reinforcement learning. arXiv preprint arXiv:1509.02971.
- 13. Barth-Maron, G., Hoffman, M. W., Budden, D., Dabney, W., Horgan, D., Tb, D., ... & Lillicrap, T. (2018). Distributed distributional deterministic policy gradients. arXiv preprint arXiv:1804.08617. 
- 14. Hernandez-Garcia, J. F., & Sutton, R. S. (2019). Understanding multi-step deep reinforcement learning: A systematic study of the DQN target. arXiv preprint arXiv:1901.07510.  
+ 9. Hernandez-Garcia, J. F., & Sutton, R. S. (2019). Understanding multi-step deep reinforcement learning: A systematic study of the DQN target. arXiv preprint arXiv:1901.07510.  
