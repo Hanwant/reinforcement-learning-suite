@@ -3,29 +3,25 @@
   This repo contains pytorch implementations of various RL algorithms, with a focus on Neural Networks as function approximators.
   Implementations are tested on various classic Atari games, as well as cartpole for quick prototyping. The main interface for running training and/or testing of agents is via run.py. Execute python run.py --h to see how to pass arguments to the script. 
 
-## Agents currently implemented:
-     *  DQN¹
-     *  Double DQN²
-     *  Dueling DQN³
-     *  Implicit Quantile Networks⁴ (IQN)
-     * *Fully Parameterized Quantile Function⁵ (FQF)
+## Agents/Methods currently implemented:
+     * DQN [1]
+     * Double DQN [2]
+     * Dueling DQN [3]
+     * N-step DQN [7, 14]
+     * Implicit Quantile Networks [4] (IQN)
+     * Fully Parameterized Quantile Function** [5] (FQF)
 
    These agents typically share a common base (i.e DQN) and so are composable with each other (I.e As in Rainbow⁶)
-     *Needs to be fixed
+     **Needs to be fixed
 
-  ![Results for an experiment run of an IQN agent on the Boxing-v0 Atari game](/logs/Boxing-v0/16/plot.png)
+  ![Results for an experiment run of an IQN agent on the Boxing-v0 Atari game](/examples/boxing_iqn_plot.png)
 
   <!-- Video of an IQN agent playing Breakout - after ~9,000,000 interactions with the environment -->
-  <!-- ![Video of IQN playing Breakout](https://github.com/Hanwant/reinforcement-learning-suite/blob/master/images/Breakout-v0/24/step_9900396_reward_72.0.mp4) -->
-  <video src="images/Breakout-v0/24/step_9900396_reward_72.0.mp4" width="320" height="200" controls preload></video>
-## Agents to Implement:
-   * N-step DQN [7, 14]
+  [![Video of IQN playing Boxing](/examples/boxing_Iqn_step-14825908-reward-920.gif)]
+  [![Video of IQN playing Breakout](/examples/breakout_iqn_step-9900396-reward-72.gif)]
+  <video src="/images/Breakout-v0/24/step_9900396_reward_72.0.mp4" width="320" height="200" controls preload></video>
+## Agents/Methods to Implement:
    * Prioritized experience replay [8]
-   * Policy Gradient [9]
-   * PPO [10]
-   * DPG [11,12]
-   * D4PG [13]
-   * Actor-Critic Methods
   
 
 
