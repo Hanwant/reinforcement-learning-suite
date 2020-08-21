@@ -31,7 +31,7 @@ from rl_suite.agent import SARSD
 from rl_suite.NN import ConvModel, MLP, IQN_MLP, IQNConvModel, FQF_MLP, FQFConvModel
 from rl_suite.dqn_agent import DQN
 from rl_suite.iqn_agent import IQN
-from rl_suite.fqf_agent import FQF
+# from rl_suite.fqf_agent import FQF
 from rl_suite.utils import *
 
 # will be imported inside function if send_to_wandb is set to True - so non-users don't have to install
@@ -66,7 +66,7 @@ def make_id(basepath, game, continue_exp=True):
         _id += "0"
     return _id
 
-def setup_experiment(basepath, game, params, continue_exp=True):
+def setup_experiment(basepath, game, params, continue_exp=True, use_hdf5=False):
 
     exp_id = make_id(basepath, game, continue_exp=continue_exp)
 
@@ -74,12 +74,14 @@ def setup_experiment(basepath, game, params, continue_exp=True):
     imagepath = basepath/'images'/game/exp_id
     logpath = basepath/'logs'/game/exp_id
     parampath = basepath/'params'/game/exp_id
+    bufferpath = basepath/'buffers'/game/exp_id
 
-    for pth in (modelpath, imagepath, logpath, parampath):
+    for pth in (modelpath, imagepath, logpath, parampath, bufferpath):
         if not pth.is_dir():
             pth.mkdir(parents=True, exist_ok=True)
-    logpath /= 'trainlog.csv'
+    logpath /= 'testlog.csv'
     parampath /= 'params.json'
+    bufferpath /= 'replay_buffer.hdf5'
 
     if not parampath.exists():
         with open(parampath, 'w') as f:
@@ -88,7 +90,7 @@ def setup_experiment(basepath, game, params, continue_exp=True):
         with open(parampath, 'r') as f:
             params = json.load(f)
 
-    return exp_id, logpath, parampath, modelpath, imagepath, params
+    return exp_id, logpath, parampath, modelpath, imagepath, bufferpath, params
 
 def init_wandb(game, exp_id, params, continue_exp=False):
     import wandb
@@ -103,12 +105,12 @@ def init_wandb(game, exp_id, params, continue_exp=False):
 
 def init_logs(agent, env, logpath, send_to_wandb=False):
     if not logpath.exists():
-        nsteps, rewards, action_values, frames = run_test_episode(agent, env, device)
-        logs = pd.DataFrame({'updated': [datetime.now()], 'training_steps': [0], 'episode_length': [nsteps],
+        episode_length, rewards, action_values, frames = run_test_episode(agent, env, device)
+        logs = pd.DataFrame({'updated': [datetime.now()], 'training_steps': [0], 'episode_length': [episode_length],
                              'reward': [rewards], 'loss': [0.]})
         logs.to_csv(logpath, sep=',')
     if send_to_wandb:
-        init_wandb(game, exp_id, params)
+        init_wandb(agent.game, exp_id, params)
 
 def update_logs(logpath, loss, rewards, total_steps, episode_length, training_steps, send_to_wandb = False, videopath=None):
     log = pd.read_csv(logpath, sep=',', header=[0], index_col=0)
@@ -204,8 +206,8 @@ def train_loop(agent, env, basepath, exp_id, send_to_wandb=False, replay_period=
             ##################################### HOUSE KEEPING ########################################
             # Initial Logging of reward, loss
             if i == 0:
-                nsteps, reward, action_values, frames = run_test_episode(agent, env, agent.device)
-                update_logs(logpath, 0., reward, i, nsteps, training_steps, send_to_wandb=False)
+                episode_length, reward, action_values, frames = run_test_episode(agent, env, agent.device)
+                update_logs(logpath, 0., reward, i, episode_length, training_steps, send_to_wandb=False)
 
             # Max steps
             if i > max_steps:
@@ -213,7 +215,7 @@ def train_loop(agent, env, basepath, exp_id, send_to_wandb=False, replay_period=
                 break
 
             ##################################### AGENT DECIDES ON ACTION ########################################
-            # Only query for action after 4 steps, else repeat previous action
+            # Atari Games already implement frame skip of 4. So here, frame_skip only needs to be 1
             if i % frame_skip == 0:
                 # Get action with respect to given scheme
                 if expl == "eps":
@@ -234,11 +236,15 @@ def train_loop(agent, env, basepath, exp_id, send_to_wandb=False, replay_period=
 
             # Replay Buffer update generalized for multi-step setups
             nstep_buffer.append(SARSD(state, action, reward, new_state, done))
-            if len(nstep_buffer) >= nsteps:
+            if len(nstep_buffer) == nstep:
                 _reward = sum([dat.reward for dat in nstep_buffer])
                 _next_state = nstep_buffer[-1].next_state
                 sarsd = nstep_buffer.pop(0)
-                agent.replay_buffer.insert(SARSD(sarsd.state, sarsd.action, _reward, _next_state, sarsd.done))
+                nstep_sarsd = SARSD(sarsd.state, sarsd.action, _reward, _next_state, sarsd.done)
+                agent.replay_buffer.insert(nstep_sarsd)
+                if nstep == 1:
+                    assert all(np.allclose(orig, _nstep) for orig, _nstep in zip(sarsd, nstep_sarsd))
+
 
             steps_since_buffer_update += 1
             state = new_state
@@ -264,11 +270,11 @@ def train_loop(agent, env, basepath, exp_id, send_to_wandb=False, replay_period=
                 # Criteria for updating target model and saving model+logs+video
                 if steps_since_t_update > save_period:
                     agent.model_t.load_state_dict(agent.model_b.state_dict())
-                    training_steps += 1
-                    agent.save_model(total_episodes=i, training_steps=training_steps)
-                    nsteps, test_reward, action_values, frames = run_test_episode(agent, env, agent.device, max_steps=max_test_steps)
+                    agent.training_steps += 1
+                    agent.save_model(total_episodes=i, training_steps=agent.training_steps)
+                    episode_length, test_reward, action_values, frames = run_test_episode(agent, env, agent.device, max_steps=max_test_steps)
                     make_video(frames, imagepath/f'step_{i}_reward_{test_reward}.mp4')
-                    update_logs(logpath, loss, test_reward, i, nsteps, training_steps,
+                    update_logs(logpath, loss, test_reward, i, episode_length, agent.training_steps,
                               send_to_wandb=send_to_wandb, videopath=imagepath/f'step_{i}_reward_{test_reward}.mp4')
                     steps_since_t_update = 0
 
@@ -283,9 +289,9 @@ def train_loop(agent, env, basepath, exp_id, send_to_wandb=False, replay_period=
         # snap2 = tracemalloc.take_snapshot()
         # stats = snap2.compare_to(snap1, 'filename')
         import ipdb; ipdb.set_trace()
-        all_obj = muppy.get_objects()
-        sum1 = summary.summarize(all_obj)
-        summary.print_(sum1)
+        # all_obj = muppy.get_objects()
+        # sum1 = summary.summarize(all_obj)
+        # summary.print_(sum1)
         # for i, stat in enumerate(stats[:5], 1):
         #     print(f"{i}. since last snap stat: ", str(stat))
         # pass
@@ -311,8 +317,8 @@ def main(game, train, continue_exp, max_steps, send_to_wandb, max_test_steps, us
         device = 'cpu'
 
     # DEFAULT PARAMS IF param.json file is not found in parampath for experiment
-    params = dict(double_dqn = False,
-                  dueling = True,
+    params = dict(double_dqn = True,
+                  dueling = False,
                   prioritized_replay = True,
                   multi_step = True,
                   nstep = 3,
@@ -327,17 +333,20 @@ def main(game, train, continue_exp, max_steps, send_to_wandb, max_test_steps, us
                   lr_fraction_net = 2.5e-9,
                   entropy_coeff=0.,
 
-                  buffer_size = 200000,
+                  buffer_size = 1000000,
                   min_buffer_size = 50000,
+                  use_hdf5=True,
+                  buffer_savepath=None,
                   batch_size=32,
                   replay_period=4,
+                  save_period=10000,
 
+                  d_model=512,
                   lr=1e-4,
                   discount = 0.99,
                   loss='huber',
                   k_huber = 1.,
 
-                  save_period=32000,
                   expl='eps',
                   eps=1.,
                   eps_decay=1e-6,
@@ -346,16 +355,21 @@ def main(game, train, continue_exp, max_steps, send_to_wandb, max_test_steps, us
                   frame_skip=1) # Should only be needed for custom environments
 
 
-    exp_id, logpath, parampath, modelpath, imagepath, params = setup_experiment(basepath, game, params, continue_exp=continue_exp)
-    logging.info(f"""game: {game} exp_id: {exp_id} \nlogpath: {logpath} \nparampath: {parampath}
-                   \nmodelpath: {modelpath} \nimagepath: {imagepath} \nparams: {params}""")
+    exp_id, logpath, parampath, modelpath, imagepath, bufferpath, params = setup_experiment(basepath, game, params, continue_exp=continue_exp)
+    if params['buffer_savepath'] is None:
+        params['buffer_savepath'] = bufferpath
 
-    assert not (params['IQN'] and params['FQF'])
+    logging.info(f"""game: {game} exp_id: {exp_id} \nlogpath: {logpath} \nparampath: {parampath}
+                   \nmodelpath: {modelpath} \nimagepath: {imagepath} \nparams: {params} \n
+    {'buffer savepath: ' + str(params['buffer_savepath']) if params['use_hdf5'] else None}""")
+
+    assert not (params['IQN'] and params['FQF']), "Can only choose 1 Distributional Approach out of (IQN, FQF)"
     if game in MLP_GAMES:
         if params['IQN']:
             model_class = IQN_MLP
         elif params['FQF']:
-            model_class = FQF_MLP
+            # model_class = FQF_MLP
+            raise NotImplementedError('FQF not implemented yet')
         else:
             model_class = MLP
         params['frame_skip'] = 1
@@ -363,27 +377,33 @@ def main(game, train, continue_exp, max_steps, send_to_wandb, max_test_steps, us
         if params['IQN']:
             model_class = IQNConvModel
         elif params['FQF']:
-            model_class = FQFConvModel
+            # model_class = FQFConvModel
+            raise NotImplementedError('FQF not implemented yet')
         else:
             model_class = ConvModel
 
 
     env = make_env(game, 84, 84)
+    # example obs -> sarsd used when initializing hdf5 dataset
+    obs = env.reset()
+    sarsd = SARSD(state=obs, action=0, reward=0., next_state=obs, done=True)
+    env = make_env(game, 84, 84)
+
     if params['IQN']:
-        agent = IQN(env.observation_space.shape, env.action_space.n, modelpath,
-                    model_class=model_class, device=device, **params)
+        agent = IQN(env.observation_space.shape, env.action_space.n, modelpath, continue_exp=continue_exp,
+                    model_class=model_class, example_obs=sarsd, device=device, **params)
     elif params['FQF']:
-        agent = FQF(env.observation_space.shape, env.action_space.n, modelpath,
-                    model_class=model_class, device=device, **params)
+        agent = FQF(env.observation_space.shape, env.action_space.n, modelpath, continue_exp=continue_exp,
+                    model_class=model_class, example_obs=sarsd, device=device, **params)
     else:
-        agent = DQN(env.observation_space.shape, env.action_space.n, modelpath,
-                    model_class=model_class, device=device, **params)
+        agent = DQN(env.observation_space.shape, env.action_space.n, modelpath, continue_exp=continue_exp,
+                    model_class=model_class, example_obs=sarsd, device=device, **params)
 
     if train:
         train_loop(agent, env, basepath, exp_id, send_to_wandb=send_to_wandb, max_steps=max_steps, max_test_steps=max_test_steps, **params)
 
     else:
-        nsteps, reward, action_values, frames = run_test_episode(agent, env, device, max_steps=max_test_steps)
+        episode_length, reward, action_values, frames = run_test_episode(agent, env, device, max_steps=max_test_steps)
         print("reward: ", reward)
         print("Saving test video to ", imagepath/"test_colour.mp4")
         make_video(frames, imagepath/"test_colour.mp4")
