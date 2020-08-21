@@ -9,10 +9,8 @@
      * Dueling DQN [3]
      * N-step DQN [7, 9]
      * Implicit Quantile Networks [4] (IQN)
-     * Fully Parameterized Quantile Function** [5] (FQF)
 
    These agents typically share a common base (i.e DQN) and so are composable with each other (I.e As in Rainbow⁶)
-     **Needs to be fixed
 
   ![Results for an experiment run of an IQN agent on the Boxing-v0 Atari game](/examples/boxing_iqn_plot.png)
 
@@ -22,6 +20,7 @@
 
 ## Agents/Methods to Implement:
    * Prioritized experience replay [8]
+   * Fully Parameterized Quantile Function [5] (FQF)
   
 
 
