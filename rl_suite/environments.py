@@ -28,6 +28,7 @@ class CartPoleEnv:
         self.game = game
         self.env = gym.make(game)
         self.frame = None
+        self.dtype = np.float32
 
     @property
     def observation_space(self):
@@ -52,7 +53,7 @@ class CartPoleEnv:
     def step(self, action: int):
         obs, reward, done, info = self.env.step(action)
         # self.frame = self.env.render(mode="rgb_array")
-        return obs, reward, done, info
+        return np.array(obs, dtype=self.dtype), reward, done, info
 
     def close(self):
         self.env.close()

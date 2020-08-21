@@ -4,9 +4,10 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 
+###########################################   Utility #####################################################
 def conv_out_shape(in_shape, layers):
     """
-    Calculates output shape of tensor given input shape and list of convolutional layers
+    Calculates output shape of input_shape going through a list of pytorch convolutional layers
     in_shape: (H, W)
     layers: list of convolution layers
     """
@@ -17,6 +18,8 @@ def conv_out_shape(in_shape, layers):
         shape = (int(h_out), int(w_out))
     return shape
 
+
+####################################   DQN Base Architectures ############################################
 
 class DuelingHead(nn.Module):
     """
@@ -41,33 +44,9 @@ class DuelingHead(nn.Module):
             x1=x2=x
         vals = self.out_value(x1)
         adv = self.out_adv(x2)
-        qvals = vals + adv - adv.mean(-1, keepdim=True)
+        qvals = vals + adv - adv.mean(-1, keepdim=True) # broadcasts vals to add to adv for each sa pair
         return qvals
 
-class TauEmbedLayer(nn.Module):
-    """
-    For use in Implicit Quantile Networks (IQN) and Fully Parameterized Quantile Function (FQF)
-    Takes quantile fractions as input and outputs an embedding
-    to use for combining with state embedding and calculating
-    quantile values
-
-    see: https://arxiv.org//pdf/1806.06923.pdf and https://arxiv.org/pdf/1911.02140.pdf
-    """
-    def __init__(self, d_embed, d_model):
-        super().__init__()
-        self.d_embed = d_embed
-        self.projection = nn.Linear(d_embed, d_model)
-        self.act = nn.ReLU()
-
-    def forward(self, tau):
-        bs = tau.shape[0]
-        N = tau.shape[1]
-        # Embed using cosine function (I.e like in transformers)
-        spectrum = math.pi * tau.view(bs, N, 1) * \
-              torch.arange(1, self.d_embed+1, dtype=tau.dtype, device=tau.device).view(1, 1, self.d_embed)
-        basis = torch.cos(spectrum)#.view(bs*N, self.d_embed) No Need to flatten as pytorch implicitly does it
-        embedded = self.projection(basis)
-        return self.act(embedded)
 
 class MLP(nn.Module):
     def __init__(self, obs_shape, num_actions, d_model=256, dueling=False, nlayers=2, **params):
@@ -123,7 +102,32 @@ class ConvModel(nn.Module):
         x = self.act_fn(self.fc(x.view(x.shape[0], -1)))
         return self.out(x)
 
+####################################   Architecures with Distributional Outputs  #####################################
 
+class TauEmbedLayer(nn.Module):
+    """
+    For use in Implicit Quantile Networks (IQN) and Fully Parameterized Quantile Function (FQF)
+    Takes quantile fractions as input and outputs an embedding
+    to use for combining with state embedding and calculating
+    quantile values
+
+    see: https://arxiv.org//pdf/1806.06923.pdf and https://arxiv.org/pdf/1911.02140.pdf
+    """
+    def __init__(self, d_embed, d_model):
+        super().__init__()
+        self.d_embed = d_embed
+        self.projection = nn.Linear(d_embed, d_model)
+        self.act = nn.ReLU()
+
+    def forward(self, tau):
+        bs = tau.shape[0]
+        N = tau.shape[1]
+        # Embed using cosine function (I.e like in transformers)
+        spectrum = math.pi * tau.view(bs, N, 1) * \
+              torch.arange(1, self.d_embed+1, dtype=tau.dtype, device=tau.device).view(1, 1, self.d_embed)
+        basis = torch.cos(spectrum)#.view(bs*N, self.d_embed) No Need to flatten as pytorch implicitly does it
+        embedded = self.projection(basis)
+        return self.act(embedded)
 
 class IQN_MLP(nn.Module):
     def __init__(self, obs_shape, num_actions, d_model=256, d_embed=64, Ntau=32, dueling=False, nlayers=2, **params):

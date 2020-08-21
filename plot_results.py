@@ -40,6 +40,7 @@ def main(game, basepath, exp_id, save, savepath):
     ax[1].set_xlabel('total environment steps')
     ax[1].set_ylabel('reward')
     ax[1].legend(fontsize=8)
+    plt.tight_layout()
     plt.show()
     if save:
         print('saving plot to:', savepath)

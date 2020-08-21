@@ -22,6 +22,8 @@ class IQN(Agent):
         self.k_huber = k_huber
         self.risk_distortion = risk_distortion
         checkpoint = None
+        total_episodes = 0
+        training_steps = 0
         if modelpath is not None:
             models = os.listdir(modelpath)
             if len(models):
@@ -35,7 +37,8 @@ class IQN(Agent):
             target_model.load_state_dict(saved['state_dict'])
             total_episodes = saved['total_episodes']
             training_steps = saved['training_steps']
-        super().__init__(behaviour_model, target_model, modelpath=modelpath, **kwargs)
+        super().__init__(behaviour_model, target_model, total_episodes=total_episodes,
+                         training_steps=training_steps, modelpath=modelpath, **kwargs)
 
     def train_step(self, data):
         states, actions, rewards, next_states, mask = self.make_data_tensors(data)
@@ -63,10 +66,14 @@ class IQN(Agent):
                 one_hot_actions = F.one_hot(next_actions, self.num_actions).to(self.device)
                 quantiles_next = self.model_t(next_states, tau=tau2)
                 qvals_next = (quantiles_next * one_hot_actions).sum(-1)
+            # if len(rewards.shape) > 1:
+            #     rewards = rewards
+            # else:
+            #     rewards = rewards[: None]
             G_t = rewards[:, None] + self.discount * mask[:, None] * qvals_next
 
-        one_hot_actions = F.one_hot(actions[:, None], self.num_actions).to(self.device)
         quantiles_current = self.model_b(states, tau=tau1)
+        one_hot_actions = F.one_hot(actions[:, None], self.num_actions).to(self.device)
         Q_t = (quantiles_current* one_hot_actions).sum(-1)
         td_errors = G_t.unsqueeze(1) - Q_t.unsqueeze(-1) # (bs, Ntau1, Ntau2)
         loss = self.quantile_huber_loss(td_errors, tau1)
@@ -78,6 +85,8 @@ class IQN(Agent):
         """
         tderr: td errors (bs, Ntau1, Ntau2)
         """
+        if tderr.shape[1:] != (self.Ntau1, self.Ntau2):
+            import ipdb; ipdb.set_trace()
         assert tderr.shape[1:] == (self.Ntau1, self.Ntau2), "td errors must be of shape (bs, Ntau1, Ntau2)"
         huber_loss = torch.where(tderr.abs() <= self.k_huber,
                                  0.5*tderr.pow(2),
