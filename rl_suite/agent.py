@@ -155,11 +155,20 @@ class ReplayBuffer_HDF5(ReplayBuffer):
             except Exception as E:
                 raise E
         if continue_exp:
-            with h5py.File(savepath, 'r') as f:
-                lens = set([len(f[item]) for item in self.fields])
-                assert len(lens) == 1, "Lengths of each item in saved hdf5 buffer must be equal"
-                self._len = f['current_idx'][0]
-                self.idx = f['current_idx'][0]
+            try:
+                with h5py.File(savepath, 'r') as f:
+                    lens = set([len(f[item]) for item in self.fields])
+                    assert len(lens) == 1, "Lengths of each item in saved hdf5 buffer must be equal"
+                    self._len = f.attrs['current_idx']
+                    self.idx = f.attrs['current_idx']
+            except:
+                with h5py.File(savepath, 'w') as f:
+                    for field in self.fields:
+                        ele = example_item.__getattribute__(field)
+                        ele_shape = (buffer_size, ) + (ele.shape if isinstance(ele, np.ndarray) else (1, ))
+                        dtype = ele.dtype if isinstance(ele, np.ndarray) else type(ele)
+                        f.create_dataset(field, shape = ele_shape, dtype=dtype, chunks=True)
+                    f.attrs['current_idx'] = 0
         else:
             with h5py.File(savepath, 'w') as f:
                 for field in self.fields:
@@ -167,12 +176,12 @@ class ReplayBuffer_HDF5(ReplayBuffer):
                     ele_shape = (buffer_size, ) + (ele.shape if isinstance(ele, np.ndarray) else (1, ))
                     dtype = ele.dtype if isinstance(ele, np.ndarray) else type(ele)
                     f.create_dataset(field, shape = ele_shape, dtype=dtype, chunks=True)
-                f.create_dataset('current_idx', shape=(1,), dtype=int, data=[0])
+                f.attrs['current_idx'] = 0
 
     @property
     def current_idx(self):
         with h5py.File(self.savepath, 'r') as f:
-            idx = f['current_idx'][0]
+            idx = f.attrs['current_idx']
         return idx
 
     def insert(self, sars):
@@ -213,7 +222,7 @@ class ReplayBuffer_HDF5(ReplayBuffer):
 
     def __del__(self):
         with h5py.File(self.savepath, 'a') as f:
-            f['current_idx'][0] = [self._len]
+            f.attrs['current_idx'][0] = self._len
 
 class Agent:
     def __init__(self, behaviour_model, target_model, modelpath, buffer_size=100000, min_buffer_size=10000,
