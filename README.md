@@ -1,8 +1,8 @@
 # Reinforcement Learning Suite
 
   This repo contains pytorch implementations of various RL algorithms, with a focus on Neural Networks as function approximators.
-  Implementations are tested on various classic Atari games, as well as cartpole for quick prototyping. The main interface for running training and/or testing of agents is via run.py. 
-  To run testing/training, execute run.py
+  Implementations are tested on various classic Atari games, as well as cartpole for quick prototyping. The main interface for running training and/or testing of agents is via run.py. <br>
+  To run testing/training, execute run.py. <br>
   In addition to some command line parameters, there is a params dict inside the main function of run.py
   which has additional settings like type of model etc. 
 
