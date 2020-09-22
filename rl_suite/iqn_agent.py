@@ -5,7 +5,6 @@ import torch.optim as optim
 import torch.nn.functional as F
 from .NN import ConvModel, MLP, IQN_MLP, IQNConvModel
 from .agent import Agent
-from .dqn_agent import DQN
 from .utils import huber_quantile_loss
 
 
@@ -134,7 +133,7 @@ class IQN(Agent):
 
 if __name__ == "__main__":
     import numpy as np
-    from Agent import SARSD, ReplayBuffer
+    from agent import SARSD, ReplayBuffer
 
     def make_data():
         state = np.random.normal(0, 1, (4, 84, 84)).astype(np.float32)
@@ -160,18 +159,4 @@ if __name__ == "__main__":
         loss = agent.train_step(data)
         if i % 100 == 0:
             print(f"step: {i} loss:", loss)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

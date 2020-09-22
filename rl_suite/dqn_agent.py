@@ -30,10 +30,8 @@ class DQN(Agent):
             target_model.load_state_dict(saved['state_dict'])
             total_episodes = saved['total_episodes']
             training_steps = saved['training_steps']
-        # import ipdb; ipdb.set_trace()
         super().__init__(behaviour_model, target_model, modelpath=modelpath, buffer_size=buffer_size, discount=discount, lr=lr,
                          total_episodes=total_episodes, training_steps=training_steps, loss=loss, device=device, **kwargs)
-
 
     def train_step(self, data):
         states, actions, rewards, next_states, mask = self.make_data_tensors(data)
@@ -89,6 +87,34 @@ class DQN(Agent):
 
 
 
+if __name__ == "__main__":
+
+    import numpy as np
+    from agent import SARSD, ReplayBuffer
+
+    def make_data():
+        state = np.random.normal(0, 1, (4, 84, 84)).astype(np.float32)
+        action = np.random.randint(0, 6, 1).item()
+        reward = np.random.normal(0, 1, 1).astype(np.float32).item()
+        next_state = np.random.normal(0, 1, (4, 84, 84)).astype(np.float32)
+        done = np.random.binomial(1, 0.5, 1).astype(np.bool).item()
+        return SARSD(state, action, reward, next_state, done)
+
+    obs_shape = make_data().state.shape
+    agent = DQN(obs_shape, 6, None, d_embed=64, d_model=256, double_dqn=False, dueling=False)
+    rb = agent.replay_buffer
+
+    for i in range(100):
+        rb.insert(make_data())
+
+    data = rb.sample(32)
+    print("================  TESTING ================\n\n")
+    print("Starting learning loop")
+    print("Training repeatedly on single batch to confirm learning capacity \n")
+    for i in range(2000):
+        loss = agent.train_step(data)
+        if i % 100 == 0:
+            print(f"step: {i} loss:", loss)
 
 
 

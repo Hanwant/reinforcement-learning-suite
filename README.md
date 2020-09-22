@@ -1,7 +1,16 @@
 # Reinforcement Learning Suite
 
   This repo contains pytorch implementations of various RL algorithms, with a focus on Neural Networks as function approximators.
-  Implementations are tested on various classic Atari games, as well as cartpole for quick prototyping. The main interface for running training and/or testing of agents is via run.py. Execute python run.py --h to see how to pass arguments to the script. 
+  Implementations are tested on various classic Atari games, as well as cartpole for quick prototyping. The main interface for running training and/or testing of agents is via run.py. 
+  To run testing/training, execute run.py
+  In addition to some command line parameters, there is a params dict inside the main function of run.py
+  which has additional settings like type of model etc. 
+
+  ```bash 
+  python run.py --test Boxing-v0 --max_test_steps 1000 --use_cuda
+  python run.py --train Boxing-v0 --continue_exp --max_steps 1000000 --max_test_steps 1000 --use_cuda
+  python run.py --help for help
+```
 
 ## Agents/Methods currently implemented:
      * DQN [1]
@@ -22,6 +31,8 @@
    * Prioritized experience replay [8]
    * Fully Parameterized Quantile Function [5] (FQF)
   
+## To Do:
+   * Better config interface than hard-coding in script
 
 
 ### References
