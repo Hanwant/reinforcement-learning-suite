@@ -238,12 +238,11 @@ def train_loop(agent, env, basepath, exp_id, send_to_wandb=False, replay_period=
             nstep_buffer.append(SARSD(state, action, reward, new_state, done))
             if len(nstep_buffer) == nstep:
                 _reward = sum([dat.reward for dat in nstep_buffer])
-                _next_state = nstep_buffer[-1].next_state
                 sarsd = nstep_buffer.pop(0)
-                nstep_sarsd = SARSD(sarsd.state, sarsd.action, _reward, _next_state, sarsd.done)
+                nstep_sarsd = SARSD(sarsd.state, sarsd.action, _reward, sarsd.next_state, sarsd.done)
                 agent.replay_buffer.insert(nstep_sarsd)
-                if nstep == 1:
-                    assert all(np.allclose(orig, _nstep) for orig, _nstep in zip(sarsd, nstep_sarsd))
+                # if nstep == 1:
+                #     assert all(np.allclose(orig, _nstep) for orig, _nstep in zip(sarsd, nstep_sarsd))
 
 
             steps_since_buffer_update += 1
