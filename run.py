@@ -171,7 +171,7 @@ def show_action_values(action_values, idxs):
 
 
 
-def train_loop(agent, env, basepath, exp_id, send_to_wandb=False, replay_period=4, save_period=32000, max_steps=100000, expl="eps", nstep=1, eps=1., eps_decay=1e-5, eps_min=0.1, frame_skip=4, boltzmann_temp = 0.8, max_test_steps=10000, **kwargs):
+def train_loop(agent, env, basepath, exp_id, send_to_wandb=False, replay_period=4, save_period=32000, max_steps=100000, expl="eps", nstep_return=1, eps=1., eps_decay=1e-5, eps_min=0.1, frame_skip=4, boltzmann_temp = 0.8, max_test_steps=10000, **kwargs):
     # tracemalloc.start()
     # snap1 = tracemalloc.take_snapshot( )
     assert expl in ('eps', 'boltzmann')
@@ -186,6 +186,7 @@ def train_loop(agent, env, basepath, exp_id, send_to_wandb=False, replay_period=
     replay_period = agent.replay_period
     rb = agent.replay_buffer
     nstep_buffer = []
+    discount = agent.discount
     steps_since_buffer_update = 0
     save_period = save_period
     steps_since_t_update = 0
@@ -225,7 +226,7 @@ def train_loop(agent, env, basepath, exp_id, send_to_wandb=False, replay_period=
                         action = agent(state, target=False).max(-1)[-1].item()
                 elif expl == 'boltzmann':
                     qvals = agent(state, target=False) / boltzmann_temp
-                    action = torch.distributions.Categorical(logits = qvals).sample().item()
+                    action = torch.distributions.Categorical(logits=qvals).sample().item()
 
             eps = max(eps*(1-eps_decay), eps_min)
 
@@ -235,14 +236,18 @@ def train_loop(agent, env, basepath, exp_id, send_to_wandb=False, replay_period=
             rolling_reward += reward
 
             # Replay Buffer update generalized for multi-step setups
-            nstep_buffer.append(SARSD(state, action, reward, new_state, done))
-            if len(nstep_buffer) == nstep:
-                _reward = sum([dat.reward for dat in nstep_buffer])
+            if len(nstep_buffer) == nstep_return:
+                _reward = sum([(discount**i)*dat.reward for i, dat
+                               in enumerate(nstep_buffer)])
                 sarsd = nstep_buffer.pop(0)
-                nstep_sarsd = SARSD(sarsd.state, sarsd.action, _reward, sarsd.next_state, sarsd.done)
+                next_state = nstep_buffer[-1]
+                nstep_sarsd = SARSD(sarsd.state, sarsd.action,
+                                    _reward, next_state.next_state, sarsd.done)
                 agent.replay_buffer.insert(nstep_sarsd)
-                # if nstep == 1:
-                #     assert all(np.allclose(orig, _nstep) for orig, _nstep in zip(sarsd, nstep_sarsd))
+            sarsd = SARSD(state, action, reward, new_state, done)
+            if sarsd.done:
+                nstep_buffer.clear()
+            nstep_buffer.append(sarsd)
 
 
             steps_since_buffer_update += 1
@@ -320,7 +325,7 @@ def main(game, train, continue_exp, max_steps, send_to_wandb, max_test_steps, us
                   dueling=True,
                   prioritized_replay=True,
                   multi_step=True,
-                  nstep=3,
+                  nstep_return=3,
                   noisy_nets=True,
 
                   IQN=True,
