@@ -11,7 +11,7 @@ from .utils import huber_quantile_loss
 
 class IQN(Agent):
     def __init__(self, obs_shape, num_actions, modelpath, d_embed, model_class=IQNConvModel, Ntau1=32, Ntau2=32,
-                 k_huber=1., risk_distortion = lambda x: x, **kwargs):
+                 k_huber=1., nstep_return=None, risk_distortion=lambda x: x, **kwargs):
         assert model_class in (IQN_MLP, IQNConvModel)
         behaviour_model = model_class(obs_shape, num_actions, d_embed=d_embed, **kwargs)
         target_model = model_class(obs_shape, num_actions, d_embed=d_embed, **kwargs)
@@ -37,7 +37,7 @@ class IQN(Agent):
             total_episodes = saved['total_episodes']
             training_steps = saved['training_steps']
         super().__init__(behaviour_model, target_model, total_episodes=total_episodes,
-                         training_steps=training_steps, modelpath=modelpath, **kwargs)
+                         training_steps=training_steps, nstep_return=nstep_return, modelpath=modelpath, **kwargs)
 
     def train_step(self, data):
         states, actions, rewards, next_states, mask = self.make_data_tensors(data)
@@ -69,7 +69,7 @@ class IQN(Agent):
             #     rewards = rewards
             # else:
             #     rewards = rewards[: None]
-            G_t = rewards[:, None] + self.discount * mask[:, None] * qvals_next
+            G_t = rewards[:, None] + (self.discount**self.nstep_return) * mask[:, None] * qvals_next
 
         quantiles_current = self.model_b(states, tau=tau1)
         one_hot_actions = F.one_hot(actions[:, None], self.num_actions).to(self.device)
@@ -84,8 +84,8 @@ class IQN(Agent):
         """
         tderr: td errors (bs, Ntau1, Ntau2)
         """
-        if tderr.shape[1:] != (self.Ntau1, self.Ntau2):
-            import ipdb; ipdb.set_trace()
+        # if tderr.shape[1:] != (self.Ntau1, self.Ntau2):
+        #     import ipdb; ipdb.set_trace()
         assert tderr.shape[1:] == (self.Ntau1, self.Ntau2), "td errors must be of shape (bs, Ntau1, Ntau2)"
         huber_loss = torch.where(tderr.abs() <= self.k_huber,
                                  0.5*tderr.pow(2),

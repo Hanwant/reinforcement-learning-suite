@@ -8,8 +8,7 @@ from .NN import ConvModel, MLP, IQN_MLP, IQNConvModel
 from .agent import Agent
 
 class DQN(Agent):
-    def __init__(self, obs_shape, num_actions, modelpath, model_class=ConvModel, buffer_size=100000, discount = 0.99,
-                 lr=1e-4, min_buffer_size=10000, total_episodes=0, training_steps=0, loss="huber", device=None,
+    def __init__(self, obs_shape, num_actions, modelpath, model_class=ConvModel, buffer_size=100000, discount = 0.99, lr=1e-4, min_buffer_size=10000, total_episodes=0, training_steps=0, nstep_return=None, loss="huber", device=None,
                  **kwargs):
         behaviour_model = model_class(obs_shape, num_actions)
         target_model = model_class(obs_shape, num_actions)
@@ -31,7 +30,7 @@ class DQN(Agent):
             total_episodes = saved['total_episodes']
             training_steps = saved['training_steps']
         super().__init__(behaviour_model, target_model, modelpath=modelpath, buffer_size=buffer_size, discount=discount, lr=lr,
-                         total_episodes=total_episodes, training_steps=training_steps, loss=loss, device=device, **kwargs)
+                         total_episodes=total_episodes, training_steps=training_steps, nstep_return=nstep_return, loss=loss, device=device, **kwargs)
 
     def train_step(self, data):
         states, actions, rewards, next_states, mask = self.make_data_tensors(data)
@@ -48,7 +47,7 @@ class DQN(Agent):
                 greedy_qvals_next = torch.sum(qvals_next * one_hot_actions, -1)
             else:
                 greedy_qvals_next = self.model_t(next_states).max(-1)[0]
-            G_t = rewards + (mask * self.discount * greedy_qvals_next)
+            G_t = rewards + (mask * (self.discount**self.nstep_return) * greedy_qvals_next)
             # G_t = rewards[:, 0] + (mask[:, 0] * self.discount * qvals_next)
 
         # Getting one hot actions for current state and action

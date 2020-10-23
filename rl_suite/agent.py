@@ -228,7 +228,7 @@ class Agent:
     def __init__(self, behaviour_model, target_model, modelpath, buffer_size=100000, min_buffer_size=10000,
                  use_hdf5=False, example_obs=None, lr=1e-4, discount=0.99, total_episodes=0, training_steps=0,
                  device=None, loss='huber', double_dqn=True, dueling=True, replay_period=4, batch_size=32,
-                 continue_exp=False, buffer_savepath=None, **params):
+                 nstep_return=None, continue_exp=False, buffer_savepath=None, **params):
         self.device = device or ('cuda' if torch.cuda.is_available() else 'cpu')
         self.model_b = behaviour_model.to(self.device)
         self.model_t = target_model.to(self.device)
@@ -255,6 +255,8 @@ class Agent:
         self.training_steps = training_steps
         self.double_dqn = double_dqn
         self.dueling = dueling
+        assert nstep_return is not None, "Must explicitly specify nstep_return in agent constructor"
+        self.nstep_return = nstep_return
 
     def train_step(self, data):
         raise NotImplementedError

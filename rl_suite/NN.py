@@ -161,7 +161,8 @@ class IQN_MLP(nn.Module):
         return quantiles
 
 class IQNConvModel(nn.Module):
-    def __init__(self, obs_shape, num_actions, d_model=256, d_embed=64, dueling=False, Ntau=32, **params):
+    def __init__(self, obs_shape, num_actions, d_model=256, d_embed=64,
+                 dueling=False, Ntau=32, **params):
         super().__init__()
         self.in_shape = obs_shape
         self.out_shape = num_actions
