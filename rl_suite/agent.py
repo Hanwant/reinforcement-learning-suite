@@ -40,10 +40,10 @@ class ReplayBuffer:
     def get_nstep_sarsd(self):
         _reward = sum([(self.discount**i)*dat.reward for i, dat
                         in enumerate(self.nstep_buffer)])
-        sarsd = self.nstep_buffer.pop(0)
-        next_state = self.nstep_buffer[-1].next_state
-        nstep_sarsd = SARSD(sarsd.state, sarsd.action,
-                            _reward, next_state, sarsd.done)
+        nstep_sarsd = self.nstep_buffer.pop(0)
+        nstep_sarsd.reward = _reward
+        if len(self.nstep_buffer):
+            nstep_sarsd.next_state = self.nstep_buffer[-1].next_state
         return nstep_sarsd
 
     def insert(self, sarsd):
