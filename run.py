@@ -185,8 +185,6 @@ def train_loop(agent, env, basepath, exp_id, send_to_wandb=False, replay_period=
     buffer_size = agent.buffer_size
     replay_period = agent.replay_period
     rb = agent.replay_buffer
-    nstep_buffer = []
-    discount = agent.discount
     steps_since_buffer_update = 0
     save_period = save_period
     steps_since_t_update = 0
@@ -234,20 +232,8 @@ def train_loop(agent, env, basepath, exp_id, send_to_wandb=False, replay_period=
             # Take action, get SARSD
             new_state, reward, done, info = env.step(action)
             rolling_reward += reward
-
-            # Replay Buffer update generalized for multi-step setups
-            if len(nstep_buffer) == nstep_return:
-                _reward = sum([(discount**i)*dat.reward for i, dat
-                               in enumerate(nstep_buffer)])
-                sarsd = nstep_buffer.pop(0)
-                next_state = nstep_buffer[-1]
-                nstep_sarsd = SARSD(sarsd.state, sarsd.action,
-                                    _reward, next_state.next_state, sarsd.done)
-                agent.replay_buffer.insert(nstep_sarsd)
             sarsd = SARSD(state, action, reward, new_state, done)
-            if sarsd.done:
-                nstep_buffer.clear()
-            nstep_buffer.append(sarsd)
+            agent.replay_buffer.insert(sarsd)
 
 
             steps_since_buffer_update += 1
